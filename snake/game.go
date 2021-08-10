@@ -2,16 +2,21 @@ package snake
 
 import (
 	"errors"
+	"fmt"
 	"image/color"
 	_ "image/png"
 	"math/rand"
 	"time"
 
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"github.com/hajimehoshi/ebiten/v2/text"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/examples/resources/fonts"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"go.uber.org/zap"
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/opentype"
 )
 
 func NewGame(logger *zap.Logger) (*Game, error) {
@@ -27,8 +32,6 @@ func NewGame(logger *zap.Logger) (*Game, error) {
 	// TODO defaults to 60
 	ebiten.SetMaxTPS(10)
 
-	// Setup initial Snake
-	game.Snake.Position = append(game.Snake.Position, Point{4 + game.padding, game.padding}, Point{game.padding, game.padding})
 	game.Snake.Width = 4
 
 	//game.Snake.Direction = right
@@ -36,6 +39,24 @@ func NewGame(logger *zap.Logger) (*Game, error) {
 	// Setup initial apples
 	game.Apple.DropFrequency = time.Second
 	game.Apple.Width = 4
+
+	// Reset State
+	game.Restart()
+
+	// Setup score
+	tt, err := opentype.Parse(fonts.MPlus1pRegular_ttf)
+	if err != nil {
+		return game, fmt.Errorf("could not setup font: %w", err)
+	}
+
+	game.Score.Font, err = opentype.NewFace(tt, &opentype.FaceOptions{
+		Size:    20.0,
+		DPI:     40,
+		Hinting: font.HintingFull,
+	})
+	if err != nil {
+		return game, fmt.Errorf("could not configure font: %w", err)
+	}
 
 	return game, nil
 }
@@ -62,6 +83,10 @@ type Game struct {
 	Snake Snake
 	Apple Apple
 
+	Score Score
+
+	over bool
+
 	logger *zap.Logger
 }
 
@@ -73,20 +98,44 @@ func (g *Game) Run() error {
 	return nil
 }
 
+func (g *Game) Restart() {
+	// Reset snake position
+	g.Snake.Position = []Point{{4 + g.padding, g.padding}, {g.padding, g.padding}}
+	// Reset apples
+	g.Apple.Positions = []Point{}
+	// Reset Score
+	g.Score.Count = 0
+	// Reset direction
+	g.Snake.Direction = right
+	// Reset game
+	g.over = false
+}
+
 func (g *Game) Update() error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
 		g.logger.Info("game ended by player pressing escape")
 		return errors.New("game ended by player")
 	}
 
+	if g.over {
+		if inpututil.IsKeyJustPressed(ebiten.KeyR) {
+			g.logger.Info("game restarted by player")
+			g.Restart()
+			return nil
+		}
+		return nil
+	}
+
 	g.updateDirection()
 
 	if g.checkCollisionWall() {
 		g.gameOver("wall collision")
+		return nil
 	}
 
 	if g.checkSnakeHeadHitSnake() {
 		g.gameOver("snake collision")
+		return nil
 	}
 
 	g.moveSnake()
@@ -95,7 +144,6 @@ func (g *Game) Update() error {
 		g.Apple.Drop(g.randomUnusedPoint())
 	}
 
-	// g.logger.Debug("update debugger", zap.Reflect("Snake", g.Snake.Position))
 	return nil
 }
 
@@ -220,6 +268,7 @@ func (g *Game) moveSnake() {
 	if collided, applePosition := g.checkSnakeHeadHitApple(); collided {
 		// Next slot is an apple, remove the apple
 		g.Apple.Remove(applePosition)
+		g.Score.Count++
 	} else {
 		// Next slot isn't an apple, so don't extend the snake
 		g.Snake.Position = g.Snake.Position[:len(g.Snake.Position)-1]
@@ -227,7 +276,15 @@ func (g *Game) moveSnake() {
 }
 
 func (g *Game) gameOver(reason string) {
-	g.logger.Fatal("game over", zap.String("reason", reason), zap.Any("score", len(g.Snake.Position)))
+	g.logger.Info("game over", zap.Any("reason", reason), zap.Any("score", g.Score.Count))
+	g.over = true
+}
+
+func (g *Game) drawGameOver(screen *ebiten.Image) {
+	g.Score.Draw(screen)
+	text.Draw(screen, "game over", g.Score.Font, 100, 80, color.RGBA{R: 255, G: 100, B: 100, A: 255})
+	text.Draw(screen, "press r to restart", g.Score.Font, 80, 120, color.White)
+	return
 }
 
 func (g *Game) checkCollisionWall() bool {
@@ -260,47 +317,22 @@ func (g *Game) checkCollisionWall() bool {
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(color.NRGBA{R: 0x00, G: 0x40, B: 0x80, A: 0xff})
 
+	if g.over {
+		g.drawGameOver(screen)
+		return
+	}
+
 	// Draw border
 	borderLines := rect(float64(g.padding), float64(g.padding), float64(g.screenHeight-2*g.padding), float64(g.screenWidth-2*g.padding))
 	for _, line := range borderLines {
 		ebitenutil.DrawLine(screen, line.X1, line.Y1, line.X2, line.Y2, color.RGBA{R: 255, G: 0, B: 0, A: 255})
 	}
 
-	// Draw player
-	g.drawSnake(screen)
-
-	g.drawApples(screen)
-
-	// Need a way to draw the whole Snake
-}
-
-func (g *Game) drawApples(screen *ebiten.Image) {
-	for _, p := range g.Apple.Positions {
-		ebitenutil.DrawRect(screen, float64(p.X)-2, float64(p.Y)-2, float64(g.Apple.Width), float64(g.Apple.Width), color.Black)
-		ebitenutil.DrawRect(screen, float64(p.X)-1, float64(p.Y)-1, float64(g.Apple.Width)/2, float64(g.Apple.Width)/2, color.RGBA{R: 255, G: 100, B: 100, A: 255})
-	}
-}
-
-func (g *Game) drawSnake(screen *ebiten.Image) {
-	for _, p := range g.Snake.Position {
-		ebitenutil.DrawRect(screen, float64(p.X)-2, float64(p.Y)-2, float64(g.Snake.Width), float64(g.Snake.Width), color.Black)
-		ebitenutil.DrawRect(screen, float64(p.X)-1, float64(p.Y)-1, float64(g.Snake.Width)/2, float64(g.Snake.Width)/2, color.RGBA{R: 100, G: 255, B: 100, A: 255})
-	}
+	g.Snake.Draw(screen)
+	g.Apple.Draw(screen)
+	g.Score.Draw(screen)
 }
 
 func (g *Game) Layout(_, _ int) (int, int) {
 	return g.screenWidth, g.screenHeight
-}
-
-type line struct {
-	X1, Y1, X2, Y2 float64
-}
-
-func rect(x, y, w, h float64) []line {
-	return []line{
-		{x, y, x, y + h},
-		{x, y + h, x + w, y + h},
-		{x + w, y + h, x + w, y},
-		{x + w, y, x, y},
-	}
 }

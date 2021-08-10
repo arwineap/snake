@@ -1,6 +1,12 @@
 package snake
 
-import "math"
+import (
+	"image/color"
+	"math"
+
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+)
 
 func checkPointCollision(p1 Point, p2 Point) bool {
 
@@ -11,32 +17,22 @@ func checkPointCollision(p1 Point, p2 Point) bool {
 		return true
 	}
 	return false
+}
 
-	/*
-		p1XMin := p1.X - 2
-		p1XMax := p1.X + 2
-		p1YMin := p1.Y - 2
-		p1YMax := p1.Y + 2
+func drawPoint(screen *ebiten.Image, p Point, c color.Color) {
+	ebitenutil.DrawRect(screen, float64(p.X)-2, float64(p.Y)-2, float64(4), float64(4), color.Black)
+	ebitenutil.DrawRect(screen, float64(p.X)-1, float64(p.Y)-1, float64(2), float64(2), c)
+}
 
-		p2XMin := p2.X - 2
-		p2XMax := p2.X + 2
-		p2YMin := p2.Y - 2
-		p2YMax := p2.Y + 2
+type line struct {
+	X1, Y1, X2, Y2 float64
+}
 
-		logger, _ := zap.NewProduction()
-
-		if (p1XMin >= p2XMin && p1XMin <= p2XMax) || (p1XMax >= p2XMin && p1XMax <= p2XMax) {
-			if (p1YMin >= p2YMin && p1YMin <= p2YMax) || (p1YMax >= p2YMin && p1YMax <= p2YMax) {
-				a := p1XMin >= p2XMin && p1XMin <= p2XMax
-				b := p1XMax >= p2XMin && p1XMax <= p2XMax
-				c := p1YMin >= p2YMin && p1YMin <= p2YMax
-				d := p1YMax >= p2YMin && p1YMax <= p2YMax
-				logger.Info("collision", zap.Any("p1", p1), zap.Any("p2", p2), zap.Any("a", a), zap.Any("b", b), zap.Any("c", c), zap.Any("d", d))
-				return true
-			}
-		}
-
-		return false
-
-	*/
+func rect(x, y, w, h float64) []line {
+	return []line{
+		{x, y, x, y + h},
+		{x, y + h, x + w, y + h},
+		{x + w, y + h, x + w, y},
+		{x + w, y, x, y},
+	}
 }

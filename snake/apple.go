@@ -1,7 +1,10 @@
 package snake
 
 import (
+	"image/color"
 	"time"
+
+	"github.com/hajimehoshi/ebiten/v2"
 )
 
 type Apple struct {
@@ -37,5 +40,11 @@ func (a *Apple) Remove(p Point) {
 	if exists {
 		a.Positions[removeIdx] = a.Positions[len(a.Positions)-1]
 		a.Positions = a.Positions[:len(a.Positions)-1]
+	}
+}
+
+func (a *Apple) Draw(screen *ebiten.Image) {
+	for _, p := range a.Positions {
+		drawPoint(screen, p, color.RGBA{R: 255, G: 100, B: 100, A: 255})
 	}
 }
