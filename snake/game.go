@@ -25,20 +25,25 @@ func NewGame(logger *zap.Logger) (*Game, error) {
 		screenHeight: 240,
 		padding:      20,
 		logger:       logger,
+
+		Snake: Snake{
+			Width:     4,
+			Speed:     time.Millisecond * 100,
+			Direction: right,
+		},
+
+		Apple: Apple{
+			DropFrequency: time.Second,
+			Width:         4,
+		},
+
+		Score: Score{
+			Count: 0,
+		},
 	}
 
 	ebiten.SetWindowSize(game.screenWidth*2, game.screenHeight*2)
 	ebiten.SetWindowTitle("Snake")
-	// TODO defaults to 60
-	ebiten.SetMaxTPS(10)
-
-	game.Snake.Width = 4
-
-	//game.Snake.Direction = right
-
-	// Setup initial apples
-	game.Apple.DropFrequency = time.Second
-	game.Apple.Width = 4
 
 	// Reset State
 	game.Restart()
@@ -46,9 +51,8 @@ func NewGame(logger *zap.Logger) (*Game, error) {
 	// Setup score
 	tt, err := opentype.Parse(fonts.MPlus1pRegular_ttf)
 	if err != nil {
-		return game, fmt.Errorf("could not setup font: %w", err)
+		return &Game{}, fmt.Errorf("could not setup font: %w", err)
 	}
-
 	game.Score.Font, err = opentype.NewFace(tt, &opentype.FaceOptions{
 		Size:    20.0,
 		DPI:     40,
@@ -246,6 +250,10 @@ func (g *Game) randomUnusedPoint() Point {
 }
 
 func (g *Game) moveSnake() {
+	if time.Since(g.Snake.LastMove) < g.Snake.Speed {
+		return
+	}
+
 	// To move the Snake we prepend a Point to the start of the slice, then remove the final Position of the slice
 	// If we moved into an apple, we don't remove the final Position
 	var newPoint Point
@@ -273,6 +281,7 @@ func (g *Game) moveSnake() {
 		// Next slot isn't an apple, so don't extend the snake
 		g.Snake.Position = g.Snake.Position[:len(g.Snake.Position)-1]
 	}
+	g.Snake.LastMove = time.Now()
 }
 
 func (g *Game) gameOver(reason string) {

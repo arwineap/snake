@@ -2,6 +2,7 @@ package snake
 
 import (
 	"image/color"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -9,6 +10,8 @@ import (
 type Snake struct {
 	Position  []Point
 	Direction direction
+	Speed     time.Duration
+	LastMove  time.Time
 	Width     int
 }
 
