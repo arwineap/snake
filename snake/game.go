@@ -20,6 +20,9 @@ import (
 )
 
 func NewGame(logger *zap.Logger) (*Game, error) {
+	// random seed for apple gen
+	rand.Seed(time.Now().UnixNano())
+
 	game := &Game{
 		screenWidth:  240,
 		screenHeight: 240,
@@ -27,14 +30,12 @@ func NewGame(logger *zap.Logger) (*Game, error) {
 		logger:       logger,
 
 		Snake: Snake{
-			Width:     4,
 			Speed:     time.Millisecond * 100,
 			Direction: right,
 		},
 
 		Apple: Apple{
 			DropFrequency: time.Second,
-			Width:         4,
 		},
 
 		Score: Score{
@@ -64,20 +65,6 @@ func NewGame(logger *zap.Logger) (*Game, error) {
 
 	return game, nil
 }
-
-type Point struct {
-	X int
-	Y int
-}
-
-type direction string
-
-const (
-	right direction = "right"
-	left  direction = "left"
-	up    direction = "up"
-	down  direction = "down"
-)
 
 type Game struct {
 	screenWidth  int
@@ -122,7 +109,7 @@ func (g *Game) Update() error {
 	}
 
 	if g.over {
-		if inpututil.IsKeyJustPressed(ebiten.KeyR) {
+		if inpututil.IsKeyJustPressed(ebiten.KeyR) || inpututil.IsKeyJustPressed(ebiten.KeySpace) {
 			g.logger.Info("game restarted by player")
 			g.Restart()
 			return nil
@@ -137,12 +124,23 @@ func (g *Game) Update() error {
 		return nil
 	}
 
-	if g.checkSnakeHeadHitSnake() {
+	if g.Snake.PointCollides(g.Snake.NextPoint()) {
 		g.gameOver("snake collision")
 		return nil
 	}
+	moved := g.Snake.Move()
 
-	g.moveSnake()
+	appleCollisions := g.Apple.Collisions(g.Snake.Head())
+	for _, rmApple := range appleCollisions {
+		g.Apple.Remove(rmApple)
+		g.Score.Count++
+		g.Snake.AddExtend(1)
+	}
+
+	// We only extend the snake if this is the snake has moved this tick
+	if moved {
+		g.Snake.Extend()
+	}
 
 	if g.Apple.CheckDrop() {
 		g.Apple.Drop(g.randomUnusedPoint())
@@ -151,137 +149,43 @@ func (g *Game) Update() error {
 	return nil
 }
 
-// Checks if snake will run into itself
-func (g *Game) checkSnakeHeadHitSnake() bool {
-	var newPoint Point
-	currentPoint := g.Snake.Position[0]
-	switch g.Snake.Direction {
-	case up:
-		newPoint = currentPoint
-		newPoint.Y = newPoint.Y - 4
-	case down:
-		newPoint = currentPoint
-		newPoint.Y = newPoint.Y + 4
-	case left:
-		newPoint = currentPoint
-		newPoint.X = newPoint.X - 4
-	case right:
-		newPoint = currentPoint
-		newPoint.X = newPoint.X + 4
-	}
-
-	if g.checkSnakePointCollide(newPoint) {
-		return true
-	} else {
-		return false
-	}
-}
-
-// Check if snake will hit an apple
-func (g *Game) checkSnakeHeadHitApple() (bool, Point) {
-	head := g.Snake.Position[0]
-	for _, a := range g.Apple.Positions {
-		if checkPointCollision(head, a) {
-			return true, a
-		}
-	}
-
-	return false, Point{}
-}
-
 func (g *Game) updateDirection() {
 	if ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
 		if g.Snake.Direction != left {
-			g.Snake.Direction = right
+			g.Snake.SetDirection(right)
 		}
 	}
 
 	if ebiten.IsKeyPressed(ebiten.KeyS) || ebiten.IsKeyPressed(ebiten.KeyArrowDown) {
 		if g.Snake.Direction != up {
-			g.Snake.Direction = down
+			g.Snake.SetDirection(down)
 		}
 	}
 
 	if ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
 		if g.Snake.Direction != right {
-			g.Snake.Direction = left
+			g.Snake.SetDirection(left)
 		}
 	}
 
 	if ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyArrowUp) {
 		if g.Snake.Direction != down {
-			g.Snake.Direction = up
+			g.Snake.SetDirection(up)
 		}
 	}
-}
-
-func (g *Game) checkSnakePointCollide(point Point) bool {
-	for _, p := range g.Snake.Position {
-		if checkPointCollision(p, point) {
-			return true
-		}
-	}
-	return false
-}
-
-func (g *Game) checkApplePointCollide(point Point) bool {
-	for _, p := range g.Apple.Positions {
-		if checkPointCollision(p, point) {
-			return true
-		}
-	}
-	return false
 }
 
 func (g *Game) randomUnusedPoint() Point {
-	// random seed for apple gen
-	rand.Seed(time.Now().UnixNano())
-
 	randNumInsideMap := func() int {
 		return rand.Intn((g.screenWidth-g.padding)-g.padding) + g.padding
 	}
 
 	var point = Point{X: randNumInsideMap(), Y: randNumInsideMap()}
-	for g.checkSnakePointCollide(point) && !g.checkApplePointCollide(point) {
+	for g.Snake.PointCollides(point) && !g.Apple.PointCollides(point) {
 		point = Point{X: randNumInsideMap(), Y: randNumInsideMap()}
 	}
 
 	return point
-}
-
-func (g *Game) moveSnake() {
-	if time.Since(g.Snake.LastMove) < g.Snake.Speed {
-		return
-	}
-
-	// To move the Snake we prepend a Point to the start of the slice, then remove the final Position of the slice
-	// If we moved into an apple, we don't remove the final Position
-	var newPoint Point
-	head := g.Snake.Position[0]
-	switch g.Snake.Direction {
-	case up:
-		newPoint = Point{X: head.X, Y: head.Y - g.Snake.Width}
-	case down:
-		newPoint = Point{X: head.X, Y: head.Y + g.Snake.Width}
-	case left:
-		newPoint = Point{X: head.X - g.Snake.Width, Y: head.Y}
-	case right:
-		newPoint = Point{X: head.X + g.Snake.Width, Y: head.Y}
-	default:
-		return
-	}
-
-	g.Snake.Position = append([]Point{newPoint}, g.Snake.Position...)
-
-	if collided, applePosition := g.checkSnakeHeadHitApple(); collided {
-		// Next slot is an apple, remove the apple
-		g.Apple.Remove(applePosition)
-		g.Score.Count++
-	} else {
-		// Next slot isn't an apple, so don't extend the snake
-		g.Snake.Position = g.Snake.Position[:len(g.Snake.Position)-1]
-	}
-	g.Snake.LastMove = time.Now()
 }
 
 func (g *Game) gameOver(reason string) {
@@ -301,7 +205,7 @@ func (g *Game) checkCollisionWall() bool {
 	// Tail of the Snake is g.Snake.Position[len(g.Snake.Position)-1]
 	// check if head of Snake + Direction is within the "pixel" of death
 	// We start in the top left (0, 0)
-	head := g.Snake.Position[0]
+	head := g.Snake.Head()
 	switch g.Snake.Direction {
 	case up:
 		if head.Y <= g.padding {

@@ -9,7 +9,6 @@ import (
 )
 
 func checkPointCollision(p1 Point, p2 Point) bool {
-
 	xDistance := math.Abs(float64(p1.X - p2.X))
 	yDistance := math.Abs(float64(p1.Y - p2.Y))
 
@@ -36,3 +35,17 @@ func rect(x, y, w, h float64) []line {
 		{x + w, y, x, y},
 	}
 }
+
+type Point struct {
+	X int
+	Y int
+}
+
+type direction string
+
+const (
+	right direction = "right"
+	left  direction = "left"
+	up    direction = "up"
+	down  direction = "down"
+)

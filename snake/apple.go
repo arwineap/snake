@@ -9,7 +9,6 @@ import (
 
 type Apple struct {
 	Positions     []Point
-	Width         int
 	LastDrop      time.Time
 	DropFrequency time.Duration
 }
@@ -47,4 +46,24 @@ func (a *Apple) Draw(screen *ebiten.Image) {
 	for _, p := range a.Positions {
 		drawPoint(screen, p, color.RGBA{R: 255, G: 100, B: 100, A: 255})
 	}
+}
+
+// PointCollides - check if any apple collides with point
+func (a *Apple) PointCollides(point Point) bool {
+	appleCollisions := a.Collisions(point)
+	if len(appleCollisions) == 0 {
+		return false
+	}
+	return true
+}
+
+// Collisions - returns all points that collide
+func (a *Apple) Collisions(point Point) []Point {
+	var results []Point
+	for _, p := range a.Positions {
+		if checkPointCollision(p, point) {
+			results = append(results, p)
+		}
+	}
+	return results
 }
