@@ -24,8 +24,8 @@ func NewGame(logger *zap.Logger) (*Game, error) {
 	rand.Seed(time.Now().UnixNano())
 
 	game := &Game{
-		screenWidth:  240,
-		screenHeight: 240,
+		screenWidth:  480,
+		screenHeight: 480,
 		padding:      20,
 		logger:       logger,
 
@@ -55,8 +55,8 @@ func NewGame(logger *zap.Logger) (*Game, error) {
 		return &Game{}, fmt.Errorf("could not setup font: %w", err)
 	}
 	game.Score.Font, err = opentype.NewFace(tt, &opentype.FaceOptions{
-		Size:    20.0,
-		DPI:     40,
+		Size:    16.0,
+		DPI:     72,
 		Hinting: font.HintingFull,
 	})
 	if err != nil {
@@ -91,7 +91,7 @@ func (g *Game) Run() error {
 
 func (g *Game) Restart() {
 	// Reset snake position
-	g.Snake.Position = []Point{{4 + g.padding, g.padding}, {g.padding, g.padding}}
+	g.Snake.Position = []Point{{12 + g.padding, g.padding}, {8 + g.padding, g.padding}}
 	// Reset apples
 	g.Apple.Positions = []Point{}
 	// Reset Score
@@ -195,8 +195,8 @@ func (g *Game) gameOver(reason string) {
 
 func (g *Game) drawGameOver(screen *ebiten.Image) {
 	g.Score.Draw(screen)
-	text.Draw(screen, "game over", g.Score.Font, 100, 80, color.RGBA{R: 255, G: 100, B: 100, A: 255})
-	text.Draw(screen, "press r to restart", g.Score.Font, 80, 120, color.White)
+	text.Draw(screen, "game over", g.Score.Font, 200, 190, color.RGBA{R: 255, G: 100, B: 100, A: 255})
+	text.Draw(screen, "press r to restart", g.Score.Font, 170, 240, color.White)
 	return
 }
 
@@ -208,19 +208,19 @@ func (g *Game) checkCollisionWall() bool {
 	head := g.Snake.Head()
 	switch g.Snake.Direction {
 	case up:
-		if head.Y <= g.padding {
+		if head.Y <= g.padding+4 {
 			return true
 		}
 	case down:
-		if head.Y >= g.screenHeight-g.padding {
+		if head.Y >= g.screenHeight-g.padding-4 {
 			return true
 		}
 	case left:
-		if head.X <= g.padding {
+		if head.X <= g.padding+4 {
 			return true
 		}
 	case right:
-		if head.X >= g.screenWidth-g.padding {
+		if head.X >= g.screenWidth-g.padding-4 {
 			return true
 		}
 	}

@@ -15,5 +15,5 @@ type Score struct {
 }
 
 func (s Score) Draw(screen *ebiten.Image) {
-	text.Draw(screen, fmt.Sprintf("score: %d", s.Count), s.Font, 180, 10, color.White)
+	text.Draw(screen, fmt.Sprintf("score: %d", s.Count), s.Font, 380, 15, color.White)
 }

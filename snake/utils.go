@@ -12,15 +12,15 @@ func checkPointCollision(p1 Point, p2 Point) bool {
 	xDistance := math.Abs(float64(p1.X - p2.X))
 	yDistance := math.Abs(float64(p1.Y - p2.Y))
 
-	if xDistance < 4 && yDistance < 4 {
+	if xDistance < 8 && yDistance < 8 {
 		return true
 	}
 	return false
 }
 
 func drawPoint(screen *ebiten.Image, p Point, c color.Color) {
-	ebitenutil.DrawRect(screen, float64(p.X)-2, float64(p.Y)-2, float64(4), float64(4), color.Black)
-	ebitenutil.DrawRect(screen, float64(p.X)-1, float64(p.Y)-1, float64(2), float64(2), c)
+	ebitenutil.DrawRect(screen, float64(p.X)-4, float64(p.Y)-4, float64(8), float64(8), color.Black)
+	ebitenutil.DrawRect(screen, float64(p.X)-2, float64(p.Y)-2, float64(4), float64(4), c)
 }
 
 type line struct {

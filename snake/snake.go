@@ -27,16 +27,16 @@ func (s *Snake) NextPoint() Point {
 	switch s.Direction {
 	case up:
 		newPoint = currentPoint
-		newPoint.Y = newPoint.Y - 4
+		newPoint.Y = newPoint.Y - 8
 	case down:
 		newPoint = currentPoint
-		newPoint.Y = newPoint.Y + 4
+		newPoint.Y = newPoint.Y + 8
 	case left:
 		newPoint = currentPoint
-		newPoint.X = newPoint.X - 4
+		newPoint.X = newPoint.X - 8
 	case right:
 		newPoint = currentPoint
-		newPoint.X = newPoint.X + 4
+		newPoint.X = newPoint.X + 8
 	}
 
 	return newPoint
@@ -68,13 +68,13 @@ func (s *Snake) Move() bool {
 	head := s.Head()
 	switch s.Direction {
 	case up:
-		newPoint = Point{X: head.X, Y: head.Y - 4}
+		newPoint = Point{X: head.X, Y: head.Y - 8}
 	case down:
-		newPoint = Point{X: head.X, Y: head.Y + 4}
+		newPoint = Point{X: head.X, Y: head.Y + 8}
 	case left:
-		newPoint = Point{X: head.X - 4, Y: head.Y}
+		newPoint = Point{X: head.X - 8, Y: head.Y}
 	case right:
-		newPoint = Point{X: head.X + 4, Y: head.Y}
+		newPoint = Point{X: head.X + 8, Y: head.Y}
 	default:
 		return true
 	}
