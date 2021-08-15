@@ -38,19 +38,19 @@ func (b *Border) genBorder(screenWidth int, screenHeight int) {
 
 	var newPoint = results[0]
 	// Top points
-	for newPoint.X < (screenWidth - (b.Padding * 2)) {
+	for newPoint.X < (screenWidth - b.Padding) {
 		newPoint.X = newPoint.X + b.Width
 		results = append(results, newPoint)
 	}
 
 	// Right wall points
-	for newPoint.Y < (screenHeight - (b.Padding * 2)) {
+	for newPoint.Y <= (screenHeight - b.Padding) {
 		newPoint.Y = newPoint.Y + b.Width
 		results = append(results, newPoint)
 	}
 
 	// Bottom wall points
-	for newPoint.X > b.Padding {
+	for newPoint.X >= b.Padding {
 		newPoint.X = newPoint.X - b.Width
 		results = append(results, newPoint)
 	}
