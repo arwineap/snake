@@ -11,6 +11,7 @@ type Apple struct {
 	Positions     []Point
 	LastDrop      time.Time
 	DropFrequency time.Duration
+	Width         int
 }
 
 func (a *Apple) CheckDrop() bool {

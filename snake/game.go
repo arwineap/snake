@@ -11,7 +11,6 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/text"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/examples/resources/fonts"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"go.uber.org/zap"
@@ -32,14 +31,21 @@ func NewGame(logger *zap.Logger) (*Game, error) {
 		Snake: Snake{
 			Speed:     time.Millisecond * 100,
 			Direction: right,
+			Width:     8,
 		},
 
 		Apple: Apple{
 			DropFrequency: time.Second,
+			Width:         8,
 		},
 
 		Score: Score{
 			Count: 0,
+		},
+
+		Border: Border{
+			Padding: 20,
+			Width:   2,
 		},
 	}
 
@@ -76,6 +82,8 @@ type Game struct {
 
 	Score Score
 
+	Border Border
+
 	over bool
 
 	logger *zap.Logger
@@ -91,7 +99,7 @@ func (g *Game) Run() error {
 
 func (g *Game) Restart() {
 	// Reset snake position
-	g.Snake.Position = []Point{{12 + g.padding, g.padding}, {8 + g.padding, g.padding}}
+	g.Snake.Position = []Point{{(g.Snake.Width * 3) + g.padding, (g.padding + 1) + (g.Snake.Width / 2), g.Snake.Width}, {(g.Snake.Width * 2) + g.padding, (g.padding + 1) + (g.Snake.Width / 2), g.Snake.Width}}
 	// Reset apples
 	g.Apple.Positions = []Point{}
 	// Reset Score
@@ -143,7 +151,7 @@ func (g *Game) Update() error {
 	}
 
 	if g.Apple.CheckDrop() {
-		g.Apple.Drop(g.randomUnusedPoint())
+		g.Apple.Drop(g.randomUnusedPoint(g.Apple.Width))
 	}
 
 	return nil
@@ -175,14 +183,14 @@ func (g *Game) updateDirection() {
 	}
 }
 
-func (g *Game) randomUnusedPoint() Point {
+func (g *Game) randomUnusedPoint(width int) Point {
 	randNumInsideMap := func() int {
 		return rand.Intn((g.screenWidth-g.padding)-g.padding) + g.padding
 	}
 
-	var point = Point{X: randNumInsideMap(), Y: randNumInsideMap()}
+	var point = Point{X: randNumInsideMap(), Y: randNumInsideMap(), Width: width}
 	for g.Snake.PointCollides(point) && !g.Apple.PointCollides(point) {
-		point = Point{X: randNumInsideMap(), Y: randNumInsideMap()}
+		point = Point{X: randNumInsideMap(), Y: randNumInsideMap(), Width: width}
 	}
 
 	return point
@@ -205,26 +213,7 @@ func (g *Game) checkCollisionWall() bool {
 	// Tail of the Snake is g.Snake.Position[len(g.Snake.Position)-1]
 	// check if head of Snake + Direction is within the "pixel" of death
 	// We start in the top left (0, 0)
-	head := g.Snake.Head()
-	switch g.Snake.Direction {
-	case up:
-		if head.Y <= g.padding+4 {
-			return true
-		}
-	case down:
-		if head.Y >= g.screenHeight-g.padding-4 {
-			return true
-		}
-	case left:
-		if head.X <= g.padding+4 {
-			return true
-		}
-	case right:
-		if head.X >= g.screenWidth-g.padding-4 {
-			return true
-		}
-	}
-	return false
+	return g.Border.Collides(g.Snake.Head())
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
@@ -236,10 +225,11 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	}
 
 	// Draw border
-	borderLines := rect(float64(g.padding), float64(g.padding), float64(g.screenHeight-2*g.padding), float64(g.screenWidth-2*g.padding))
-	for _, line := range borderLines {
-		ebitenutil.DrawLine(screen, line.X1, line.Y1, line.X2, line.Y2, color.RGBA{R: 255, G: 0, B: 0, A: 255})
-	}
+	//borderLines := rect(float64(g.padding), float64(g.padding), float64(g.screenHeight-2*g.padding), float64(g.screenWidth-2*g.padding))
+	// for _, line := range borderLines {
+	// 	ebitenutil.DrawLine(screen, line.X1, line.Y1, line.X2, line.Y2, color.RGBA{R: 255, G: 0, B: 0, A: 255})
+	// }
+	g.Border.Draw(screen)
 
 	g.Snake.Draw(screen)
 	g.Apple.Draw(screen)

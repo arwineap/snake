@@ -12,6 +12,7 @@ type Snake struct {
 	Direction   direction
 	Speed       time.Duration
 	LastMove    time.Time
+	Width       int
 	extendQueue int
 }
 
@@ -27,16 +28,16 @@ func (s *Snake) NextPoint() Point {
 	switch s.Direction {
 	case up:
 		newPoint = currentPoint
-		newPoint.Y = newPoint.Y - 8
+		newPoint.Y = newPoint.Y - s.Width
 	case down:
 		newPoint = currentPoint
-		newPoint.Y = newPoint.Y + 8
+		newPoint.Y = newPoint.Y + s.Width
 	case left:
 		newPoint = currentPoint
-		newPoint.X = newPoint.X - 8
+		newPoint.X = newPoint.X - s.Width
 	case right:
 		newPoint = currentPoint
-		newPoint.X = newPoint.X + 8
+		newPoint.X = newPoint.X + s.Width
 	}
 
 	return newPoint
@@ -68,13 +69,13 @@ func (s *Snake) Move() bool {
 	head := s.Head()
 	switch s.Direction {
 	case up:
-		newPoint = Point{X: head.X, Y: head.Y - 8}
+		newPoint = Point{X: head.X, Y: head.Y - s.Width, Width: s.Width}
 	case down:
-		newPoint = Point{X: head.X, Y: head.Y + 8}
+		newPoint = Point{X: head.X, Y: head.Y + s.Width, Width: s.Width}
 	case left:
-		newPoint = Point{X: head.X - 8, Y: head.Y}
+		newPoint = Point{X: head.X - s.Width, Y: head.Y, Width: s.Width}
 	case right:
-		newPoint = Point{X: head.X + 8, Y: head.Y}
+		newPoint = Point{X: head.X + s.Width, Y: head.Y, Width: s.Width}
 	default:
 		return true
 	}
