@@ -23,20 +23,20 @@ func NewGame(logger *zap.Logger) (*Game, error) {
 	rand.Seed(time.Now().UnixNano())
 
 	game := &Game{
-		screenWidth:  480,
-		screenHeight: 480,
+		screenWidth:  960,
+		screenHeight: 960,
 		padding:      20,
 		logger:       logger,
 
 		Snake: Snake{
 			Speed:     time.Millisecond * 100,
 			Direction: right,
-			Width:     8,
+			Width:     16,
 		},
 
 		Apple: Apple{
 			DropFrequency: time.Second,
-			Width:         8,
+			Width:         16,
 		},
 
 		Score: Score{
@@ -49,7 +49,7 @@ func NewGame(logger *zap.Logger) (*Game, error) {
 		},
 	}
 
-	ebiten.SetWindowSize(game.screenWidth*2, game.screenHeight*2)
+	ebiten.SetWindowSize(game.screenWidth, game.screenHeight)
 	ebiten.SetWindowTitle("Snake")
 
 	// Reset State
@@ -202,9 +202,11 @@ func (g *Game) gameOver(reason string) {
 }
 
 func (g *Game) drawGameOver(screen *ebiten.Image) {
+	w, h := screen.Size()
+
 	g.Score.Draw(screen)
-	text.Draw(screen, "game over", g.Score.Font, 200, 190, color.RGBA{R: 255, G: 100, B: 100, A: 255})
-	text.Draw(screen, "press r to restart", g.Score.Font, 170, 240, color.White)
+	text.Draw(screen, "game over", g.Score.Font, int(float64(w)*0.46), int(float64(h)*0.5), color.RGBA{R: 255, G: 100, B: 100, A: 255})
+	text.Draw(screen, "press r to restart", g.Score.Font, int(float64(w)*0.43), int(float64(h)*0.55), color.White)
 	return
 }
 
