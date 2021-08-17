@@ -35,3 +35,7 @@ func (s Score) Draw(screen *ebiten.Image) {
 
 	text.Draw(screen, fmt.Sprintf("score: %d", s.Count), s.Font, int(float64(w)*0.90), int(float64(h)*0.015), color.White)
 }
+
+func (s *Score) Reset() {
+	s.Count = 0
+}
