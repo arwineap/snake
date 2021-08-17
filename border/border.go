@@ -1,7 +1,8 @@
-package snake
+package border
 
 import (
 	"image/color"
+	"snake/point"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -10,7 +11,20 @@ type Border struct {
 	Padding int
 	Width   int
 
-	positions []Point
+	positions []point.Point
+}
+
+func New(options ...Option) Border {
+	if len(options) == 0 {
+		options = DefaultOption()
+	}
+
+	var b Border
+	for _, opt := range options {
+		opt(&b)
+	}
+
+	return b
 }
 
 func (b *Border) Draw(screen *ebiten.Image) {
@@ -20,21 +34,21 @@ func (b *Border) Draw(screen *ebiten.Image) {
 	}
 
 	for _, p := range b.positions {
-		drawPoint(screen, p, color.Black)
+		point.DrawPoint(screen, p, color.Black)
 	}
 }
 
-func (b *Border) Collides(p Point) bool {
+func (b *Border) EndGame(head point.Point) (bool, string) {
 	for _, borderPoint := range b.positions {
-		if checkPointCollision(p, borderPoint) {
-			return true
+		if point.CheckPointCollision(head, borderPoint) {
+			return true, "border collision"
 		}
 	}
-	return false
+	return false, ""
 }
 
 func (b *Border) genBorder(screenWidth int, screenHeight int) {
-	var results = []Point{{b.Padding, b.Padding, b.Width}}
+	var results = []point.Point{{b.Padding, b.Padding, b.Width}}
 
 	var newPoint = results[0]
 	// Top points

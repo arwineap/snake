@@ -1,4 +1,4 @@
-package snake
+package score
 
 import (
 	"fmt"
@@ -12,6 +12,22 @@ import (
 type Score struct {
 	Count int
 	Font  font.Face
+}
+
+func New(options ...Option) (*Score, error) {
+	if len(options) == 0 {
+		options = DefaultOption()
+	}
+
+	var s Score
+	for _, opt := range options {
+		err := opt(&s)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &s, nil
 }
 
 func (s Score) Draw(screen *ebiten.Image) {

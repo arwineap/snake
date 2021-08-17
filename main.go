@@ -2,8 +2,7 @@ package main
 
 import (
 	"fmt"
-
-	"snake/snake"
+	"snake/game"
 
 	"go.uber.org/zap"
 )
@@ -14,10 +13,10 @@ func main() {
 		panic(fmt.Errorf("could not setup logger: %w", err))
 	}
 
-	game, err := snake.NewGame(logger)
+	g, err := game.NewGame(logger)
 	if err != nil {
 		panic(fmt.Errorf("could not setup game: %w", err))
 	}
 
-	_ = game.Run()
+	_ = g.Run()
 }
